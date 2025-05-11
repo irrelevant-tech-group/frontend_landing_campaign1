@@ -26,14 +26,6 @@ const Header = () => {
           <h1 className="text-2xl font-hero font-bold text-gradient-purple">irrelevant</h1>
         </div>
         
-        <nav className="hidden md:block">
-          <ul className="flex space-x-8">
-            <li><a href="#" className="text-cosmic-light/90 hover:text-electric-purple transition-colors">Soluciones</a></li>
-            <li><a href="#" className="text-cosmic-light/90 hover:text-electric-purple transition-colors">Casos de éxito</a></li>
-            <li><a href="#" className="text-cosmic-light/90 hover:text-electric-purple transition-colors">Recursos</a></li>
-            <li><a href="#" className="text-cosmic-light/90 hover:text-electric-purple transition-colors">Nosotros</a></li>
-          </ul>
-        </nav>
         
         <div>
           <Button

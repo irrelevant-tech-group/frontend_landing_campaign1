@@ -1,28 +1,20 @@
-
 import { useEffect, useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 
-interface MetricCardProps {
-  value: string;
-  label: string;
-  delay?: number;
-}
-
-const MetricCard: React.FC<MetricCardProps> = ({ value, label, delay = 0 }) => {
+const MetricCard = ({ value, label, gradient = "from-electric-purple to-cosmic-light" }) => {
+  const [animatedValue, setAnimatedValue] = useState("0%");
   const [isVisible, setIsVisible] = useState(false);
-  const [displayedValue, setDisplayedValue] = useState('0%');
-  const cardRef = useRef<HTMLDivElement>(null);
-  const numericValue = parseInt(value);
+  const cardRef = useRef(null);
   
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setTimeout(() => {
-            setIsVisible(true);
-          }, delay);
+          setIsVisible(true);
+          animateValue();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.5 }
     );
     
     if (cardRef.current) {
@@ -34,54 +26,53 @@ const MetricCard: React.FC<MetricCardProps> = ({ value, label, delay = 0 }) => {
         observer.unobserve(cardRef.current);
       }
     };
-  }, [delay]);
+  }, []);
   
-  useEffect(() => {
-    if (!isVisible) return;
-    
-    let startTime: number;
-    let animationFrameId: number;
-    
-    // Animate count up
-    const animateCount = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-      const duration = 1500; // 1.5 seconds
-      
-      const easeOut = (t: number): number => {
-        return 1 - Math.pow(1 - t, 2);
-      };
-      
-      const percentage = Math.min(progress / duration, 1);
-      const easedPercentage = easeOut(percentage);
-      const currentValue = Math.floor(easedPercentage * numericValue);
-      
-      setDisplayedValue(`${currentValue}%`);
-      
-      if (progress < duration) {
-        animationFrameId = requestAnimationFrame(animateCount);
+  const animateValue = () => {
+    const numericValue = parseInt(value);
+    let current = 0;
+    const increment = numericValue / 50;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= numericValue) {
+        setAnimatedValue(value);
+        clearInterval(timer);
       } else {
-        setDisplayedValue(value);
+        setAnimatedValue(Math.floor(current) + "%");
       }
-    };
-    
-    animationFrameId = requestAnimationFrame(animateCount);
-    
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [isVisible, value, numericValue]);
+    }, 30);
+  };
   
   return (
-    <div 
+    <motion.div
       ref={cardRef}
-      className={`glass-card p-5 transition-all duration-500 delay-${delay} ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      whileHover={{ scale: 1.05, y: -5 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="relative group"
     >
-      <p className="text-3xl font-accent text-gradient-purple font-bold">{displayedValue}</p>
-      <p className="text-sm mt-2 text-cosmic-light/80">{label}</p>
-    </div>
+      {/* Background with glassmorphism */}
+      <div className="absolute inset-0 bg-gradient-to-br from-future-white/5 to-transparent backdrop-blur-sm border border-electric-purple/20 rounded-2xl"></div>
+      
+      {/* Glow effect on hover */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10"
+           style={{ background: `linear-gradient(135deg, var(--electric-purple)/20, var(--neon-purple)/20)` }}></div>
+      
+      {/* Card content */}
+      <div className="relative p-6 text-center">
+        <div className={`text-4xl md:text-5xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+          {isVisible ? animatedValue : "0%"}
+        </div>
+        <p className="mt-2 text-future-white/80 text-sm md:text-base">
+          {label}
+        </p>
+        
+        {/* Decorative element */}
+        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-electric-purple opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      </div>
+      
+      {/* Bottom gradient line */}
+      <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient} opacity-30 group-hover:opacity-100 transition-opacity duration-300`}></div>
+    </motion.div>
   );
 };
 

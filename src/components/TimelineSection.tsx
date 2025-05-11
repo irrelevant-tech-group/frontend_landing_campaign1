@@ -1,116 +1,222 @@
-
 import { useRef, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Target, Skull, AlertCircle, TrendingUp, CheckCircle } from 'lucide-react';
 
-interface TimelineItem {
-  title: string;
-  description: string;
-  isUrgent?: boolean;
+interface TimelineEvent {
+  timestamp: string;
+  event: string;
+  impact: string;
+  cost: string;
+  isNegative?: boolean;
 }
 
-const timelineItems: TimelineItem[] = [
+const timelineEvents: TimelineEvent[] = [
   {
-    title: "Diagnóstico de IA",
-    description: "Evaluación completa de tus procesos actuales y oportunidades de mejora con IA."
+    timestamp: "ENERO 2024",
+    event: "ChatGPT llega a 100M de usuarios",
+    impact: "Tu competencia empieza a experimentar",
+    cost: "Comienzas a quedarte atrás"
   },
   {
-    title: "Estrategia personalizada",
-    description: "Plan de implementación adaptado a tus necesidades específicas y objetivos empresariales."
+    timestamp: "MARZO 2024",
+    event: "Automatización masiva en LATAM",
+    impact: "Empresas automatizan procesos simples",
+    cost: "Te tardas 3x más en operaciones básicas",
+    isNegative: true
   },
   {
-    title: "Desarrollo e integración",
-    description: "Implementación técnica de soluciones de IA integradas con tus sistemas existentes."
+    timestamp: "JUNIO 2024",
+    event: "Clientes esperan respuestas instantáneas",
+    impact: "El mercado cambió sus expectativas",
+    cost: "Pierdes clientes por lentitud",
+    isNegative: true
   },
   {
-    title: "Capacitación a equipos",
-    description: "Transferencia de conocimiento para que tu equipo pueda aprovechar al máximo las soluciones."
-  },
-  {
-    title: "Optimización continua",
-    description: "Mejora constante basada en datos reales de uso para maximizar el ROI.",
-    isUrgent: true
+    timestamp: "HOY",
+    event: "El costo de implementar subió",
+    impact: "La ventana de oportunidad se cierra",
+    cost: "Cada día que esperas es dinero tirado a la basura",
+    isNegative: true
   }
 ];
 
 const TimelineSection = () => {
+  const [activeEvent, setActiveEvent] = useState<number | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [activeIndices, setActiveIndices] = useState<boolean[]>(Array(timelineItems.length).fill(false));
-  
+
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.5,
-    };
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.2 }
+    );
     
-    const handleIntersect = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => {
-      entries.forEach(entry => {
-        const index = itemRefs.current.findIndex(ref => ref === entry.target);
-        if (index !== -1) {
-          setActiveIndices(prev => {
-            const newState = [...prev];
-            newState[index] = entry.isIntersecting;
-            return newState;
-          });
-        }
-      });
-    };
-    
-    const observer = new IntersectionObserver(handleIntersect, observerOptions);
-    
-    itemRefs.current.forEach(ref => {
-      if (ref) observer.observe(ref);
-    });
-    
-    return () => {
-      itemRefs.current.forEach(ref => {
-        if (ref) observer.unobserve(ref);
-      });
-    };
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => sectionRef.current && observer.unobserve(sectionRef.current);
   }, []);
-  
+
   return (
-    <section ref={sectionRef} className="py-24 px-4">
-      <div className="container mx-auto">
-        <h2 className="text-gradient mb-16 text-center">Tu camino hacia la innovación con IA</h2>
-        
-        <div className="relative max-w-5xl mx-auto">
-          <div className="timeline-line"></div>
-          
-          {timelineItems.map((item, index) => (
-            <div
+    <section ref={sectionRef} className="relative py-24 px-4 overflow-hidden">
+      {/* Background with dark overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-void-dark/80 to-void-dark"></div>
+      
+      <div className="container mx-auto relative z-10">
+        {/* Header with stark reality */}
+        <div className="text-center mb-20">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            className="text-4xl md:text-6xl font-bold text-future-white mb-6"
+          >
+            Mientras tú pensabas...
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.2 }}
+            className="text-xl text-urgency-red max-w-3xl mx-auto"
+          >
+            Esto es lo que pasó en los últimos 6 meses. Y por qué cada día cuenta.
+          </motion.p>
+        </div>
+
+        {/* Interactive Timeline */}
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-electric-purple via-warning-orange to-urgency-red transform -translate-x-1/2 hidden md:block">
+            <div className="absolute inset-0 bg-gradient-to-b from-electric-purple via-warning-orange to-urgency-red blur-md opacity-50"></div>
+          </div>
+
+          {timelineEvents.map((event, index) => (
+            <motion.div
               key={index}
-              ref={el => itemRefs.current[index] = el}
-              className={`relative mb-16 transition-all duration-700 ${index % 2 === 0 ? 'md:pr-8 md:text-right md:ml-0 md:mr-auto md:pl-0' : 'md:pl-8 md:ml-auto md:mr-0 md:text-left md:pr-0'} ${
-                activeIndices[index] 
-                  ? 'opacity-100' 
-                  : 'opacity-0 translate-y-10'
-              }`}
-              style={{ 
-                maxWidth: '45%',
-                marginLeft: index % 2 !== 0 ? 'auto' : '',
-                marginRight: index % 2 === 0 ? 'auto' : '' 
-              }}
+              initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+              animate={isVisible ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: index * 0.3 }}
+              className="relative mb-16"
             >
-              {/* Timeline dot */}
-              <div className={`absolute top-0 md:top-2 h-6 w-6 rounded-full bg-electric-purple ${index % 2 === 0 ? 'right-0 md:right-0 md:translate-x-3' : 'left-0 md:left-0 md:-translate-x-3'} ${item.isUrgent ? 'animate-pulse-glow' : ''}`}></div>
-              
-              {/* Content */}
-              <div className={`glass-card p-6 ${item.isUrgent ? 'border-urgency-red/50' : ''}`}>
-                <h3 className={`text-xl font-bold mb-2 ${item.isUrgent ? 'text-urgency-red' : 'text-electric-purple'}`}>
-                  {item.title}
-                </h3>
-                <p className="text-future-white/80">{item.description}</p>
-                
-                {item.isUrgent && (
-                  <div className="mt-4 p-2 bg-urgency-red/10 border border-urgency-red/30 rounded text-sm text-urgency-red">
-                    Los mejores resultados se logran iniciando ahora. Las empresas que esperan pierden ventaja competitiva.
+              <div className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'} md:gap-8`}>
+                {/* Content Card */}
+                <div 
+                  className={`flex-1 p-6 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                    activeEvent === index 
+                      ? 'bg-electric-purple/10 border-electric-purple shadow-[0_0_30px_rgba(112,64,255,0.3)]' 
+                      : event.isNegative 
+                        ? 'bg-urgency-red/5 border-urgency-red/30 hover:bg-urgency-red/10' 
+                        : 'bg-void-dark/90 border-electric-purple/20 hover:border-electric-purple/40'
+                  }`}
+                  onClick={() => setActiveEvent(activeEvent === index ? null : index)}
+                >
+                  {/* Timestamp */}
+                  <div className={`text-sm font-bold mb-2 ${
+                    event.isNegative ? 'text-urgency-red' : 'text-electric-purple'
+                  }`}>
+                    {event.timestamp}
                   </div>
-                )}
+                  
+                  {/* Event */}
+                  <h3 className="text-xl font-bold text-future-white mb-2">
+                    {event.event}
+                  </h3>
+                  
+                  {/* Quick impact */}
+                  <p className="text-future-white/70 mb-3">
+                    {event.impact}
+                  </p>
+                  
+                  {/* Cost */}
+                  <div className={`p-3 rounded-lg ${
+                    event.isNegative ? 'bg-urgency-red/20' : 'bg-electric-purple/10'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {event.isNegative ? (
+                        <AlertCircle className="w-4 h-4 text-urgency-red" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 text-electric-purple" />
+                      )}
+                      <span className={`text-sm font-medium ${
+                        event.isNegative ? 'text-urgency-red' : 'text-electric-purple'
+                      }`}>
+                        {event.cost}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline dot */}
+                <div className={`hidden md:block w-6 h-6 rounded-full border-4 ${
+                  event.isNegative 
+                    ? 'bg-urgency-red border-urgency-red' 
+                    : 'bg-electric-purple border-electric-purple'
+                } ${activeEvent === index ? 'ring-4 ring-white/20' : ''}`}>
+                  {activeEvent === index && (
+                    <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 bg-void-dark px-3 py-1 rounded-full border border-electric-purple/30">
+                      <span className="text-xs text-electric-purple">CLICK DETALLES</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Spacer for opposite side */}
+                <div className="hidden md:block flex-1"></div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
+
+        {/* Bottom message - Reality Check */}
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          animate={isVisible ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 1.5 }}
+          className="mt-32 text-center"
+        >
+          <div className="max-w-3xl mx-auto">
+            <div className="p-8 bg-gradient-to-br from-urgency-red/10 to-void-dark border-l-4 border-urgency-red rounded-r-2xl">
+              <div className="flex items-start gap-4">
+                <Skull className="w-8 h-8 text-urgency-red flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-2xl font-bold text-future-white mb-3">
+                    ¿Cuál es tu plan?
+                  </h3>
+                  <p className="text-lg text-future-white/90 mb-4">
+                    Mientras debatías si la IA es relevante, tu competencia ya está automatizando. 
+                    Los clientes están comparando tu velocidad de respuesta con la de ellos.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div className="p-4 bg-urgency-red/10 rounded-lg border border-urgency-red/30">
+                      <h4 className="font-bold text-urgency-red mb-1">Si no actúas:</h4>
+                      <ul className="text-sm text-future-white/80 space-y-1">
+                        <li>• Costos operativos crecen con cada venta</li>
+                        <li>• Pierdes clientes por lentitud</li>
+                        <li>• Tu equipo se quema haciendo tareas repetitivas</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 bg-electric-purple/10 rounded-lg border border-electric-purple/30">
+                      <h4 className="font-bold text-electric-purple mb-1">Si actúas ya:</h4>
+                      <ul className="text-sm text-future-white/80 space-y-1">
+                        <li>• Automatizas en 2 semanas</li>
+                        <li>• Reduces costos operativos 40%</li>
+                        <li>• Tu equipo se enfoca en lo que importa</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                    <button 
+                      onClick={() => document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="bg-electric-purple hover:bg-neon-purple text-future-white px-8 py-4 rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(112,64,255,0.5)] font-medium"
+                    >
+                      Sí, quiero mi roadmap ahora
+                    </button>
+                    <button className="border border-urgency-red/30 text-urgency-red hover:bg-urgency-red/10 px-8 py-4 rounded-full transition-all duration-300">
+                      No, prefiero esperar y ver
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
