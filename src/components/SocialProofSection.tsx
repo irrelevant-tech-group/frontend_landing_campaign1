@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Quote, Download, Clock, CheckCircle } from 'lucide-react';
+import { trackScrolledToSection, trackHeroCTAClick } from '@/lib/mixpanel-events';
 
 interface Testimonial {
   id: number;
@@ -110,6 +111,9 @@ const LiveActivity = () => {
 
 const SocialProofSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const pageLoadTime = useRef(Date.now());
+  const hasTrackedSection = useRef(false);
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -118,9 +122,45 @@ const SocialProofSection = () => {
     
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Trackear cuando el usuario llega a la sección de social proof
+        if (entry.isIntersecting && !hasTrackedSection.current) {
+          hasTrackedSection.current = true;
+          const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
+          trackScrolledToSection('social_proof', 5, timeOnPage);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => {
+      if (sectionRef.current) observer.unobserve(sectionRef.current);
+    };
+  }, []);
+
+  const handleTestimonialNavigationClick = (index: number) => {
+    setActiveIndex(index);
+    
+    // Trackear la interacción con la navegación de testimoniales
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick(`Testimonial Navigation: ${testimonials[index].author}`, 'testimonial_navigation', scrollDepth);
+  };
+
+  const handleBottomCTAClick = () => {
+    // Trackear el click del CTA en la sección de social proof
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick('Obtener mi roadmap ahora', 'social_proof_cta', scrollDepth);
+    
+    // Hacer scroll al formulario
+    document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
   
   return (
-    <section className="py-20 px-4 relative">
+    <section ref={sectionRef} className="py-20 px-4 relative">
       <LiveActivity />
       
       <div className="container mx-auto">
@@ -200,7 +240,7 @@ const SocialProofSection = () => {
             {testimonials.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setActiveIndex(index)}
+                onClick={() => handleTestimonialNavigationClick(index)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === activeIndex 
                     ? 'bg-electric-purple w-8' 
@@ -226,7 +266,7 @@ const SocialProofSection = () => {
               Únete a las empresas que ya están automatizando y viendo resultados reales en semanas.
             </p>
             <button 
-              onClick={() => document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={handleBottomCTAClick}
               className="bg-electric-purple hover:bg-neon-purple text-future-white px-8 py-4 rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(112,64,255,0.5)] group inline-flex items-center gap-2"
             >
               Obtener mi roadmap ahora

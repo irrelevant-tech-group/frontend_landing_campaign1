@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Skull, AlertCircle, TrendingUp, CheckCircle } from 'lucide-react';
+import { trackScrolledToSection, trackHeroCTAClick } from '@/lib/mixpanel-events';
 
 interface TimelineEvent {
   timestamp: string;
@@ -44,16 +45,53 @@ const TimelineSection = () => {
   const [activeEvent, setActiveEvent] = useState<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const pageLoadTime = useRef(Date.now());
+  const hasTrackedSection = useRef(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+        
+        // Trackear cuando el usuario llega a la sección timeline
+        if (entry.isIntersecting && !hasTrackedSection.current) {
+          hasTrackedSection.current = true;
+          const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
+          trackScrolledToSection('timeline', 4, timeOnPage);
+        }
+      },
       { threshold: 0.2 }
     );
     
     if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => sectionRef.current && observer.unobserve(sectionRef.current);
+    return () => {
+      if (sectionRef.current) observer.unobserve(sectionRef.current);
+    };
   }, []);
+
+  const handleMainCTAClick = () => {
+    // Trackear el click del CTA principal
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick('Sí, quiero mi roadmap ahora', 'timeline_cta', scrollDepth);
+    
+    // Hacer scroll al formulario
+    document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleNotNowClick = () => {
+    // Trackear el click del botón "No, prefiero esperar y ver"
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick('No, prefiero esperar y ver', 'timeline_negative_cta', scrollDepth);
+  };
+
+  const handleEventClick = (index: number) => {
+    setActiveEvent(activeEvent === index ? null : index);
+    
+    // Trackear la interacción con los eventos de la timeline
+    const event = timelineEvents[index];
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick(`Timeline Event: ${event.event}`, 'timeline_event', scrollDepth);
+  };
 
   return (
     <section ref={sectionRef} className="relative py-24 px-4 overflow-hidden">
@@ -105,7 +143,7 @@ const TimelineSection = () => {
                         ? 'bg-urgency-red/5 border-urgency-red/30 hover:bg-urgency-red/10' 
                         : 'bg-void-dark/90 border-electric-purple/20 hover:border-electric-purple/40'
                   }`}
-                  onClick={() => setActiveEvent(activeEvent === index ? null : index)}
+                  onClick={() => handleEventClick(index)}
                 >
                   {/* Timestamp */}
                   <div className={`text-sm font-bold mb-2 ${
@@ -203,12 +241,15 @@ const TimelineSection = () => {
                   
                   <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                     <button 
-                      onClick={() => document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      onClick={handleMainCTAClick}
                       className="bg-electric-purple hover:bg-neon-purple text-future-white px-8 py-4 rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(112,64,255,0.5)] font-medium"
                     >
                       Sí, quiero mi roadmap ahora
                     </button>
-                    <button className="border border-urgency-red/30 text-urgency-red hover:bg-urgency-red/10 px-8 py-4 rounded-full transition-all duration-300">
+                    <button 
+                      onClick={handleNotNowClick}
+                      className="border border-urgency-red/30 text-urgency-red hover:bg-urgency-red/10 px-8 py-4 rounded-full transition-all duration-300"
+                    >
                       No, prefiero esperar y ver
                     </button>
                   </div>

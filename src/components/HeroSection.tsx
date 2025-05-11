@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ParticleBackground from './ParticleBackground';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Settings, Target, Zap, Workflow } from 'lucide-react';
+import { trackHeroCTAClick, trackScrolledToSection } from '@/lib/mixpanel-events';
 
 const HeroSection = () => {
   const [currentPhrase, setCurrentPhrase] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const heroRef = useRef(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const pageLoadTime = useRef(Date.now());
+  const hasTrackedSection = useRef(false);
   
   const phrases = [
     { text: "Pocos la implementan.", icon: <Target className="inline-block w-6 h-6 text-electric-purple ml-3" /> },
@@ -17,12 +20,23 @@ const HeroSection = () => {
   
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+        
+        // Trackear cuando el usuario llega a la sección hero
+        if (entry.isIntersecting && !hasTrackedSection.current) {
+          hasTrackedSection.current = true;
+          const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
+          trackScrolledToSection('hero', 1, timeOnPage);
+        }
+      },
       { threshold: 0.1 }
     );
     
     if (heroRef.current) observer.observe(heroRef.current);
-    return () => heroRef.current && observer.unobserve(heroRef.current);
+    return () => {
+      if (heroRef.current) observer.unobserve(heroRef.current);
+    };
   }, []);
   
   useEffect(() => {
@@ -34,6 +48,11 @@ const HeroSection = () => {
   }, []);
   
   const scrollToForm = () => {
+    // Trackear el click del CTA principal
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick('Obtener mi roadmap gratis', 'hero', scrollDepth);
+    
+    // Hacer scroll al formulario
     document.getElementById('form-section')?.scrollIntoView({ 
       behavior: 'smooth',
       block: 'start'
@@ -110,15 +129,14 @@ const HeroSection = () => {
             transition={{ delay: 0.8, duration: 0.8 }}
             className="max-w-4xl mx-auto bg-gradient-to-br from-electric-purple/10 to-transparent border border-electric-purple/30 rounded-3xl p-8 md:p-12 mb-10"
           >
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-future-white mb-8 relative">
-  <span className="relative">
-    El Roadmap de IA Para Tu Empresa
-    <span className="absolute inset-0 blur-md opacity-30 text-electric-purple">
-      El Roadmap de IA Para Tu Empresa
-    </span>
-  </span>
-</h2>
-
+            <h2 className="text-3xl md:text-4xl font-bold text-center text-future-white mb-8 relative">
+              <span className="relative">
+                El Roadmap de IA Para Tu Empresa
+                <span className="absolute inset-0 blur-md opacity-30 text-electric-purple">
+                  El Roadmap de IA Para Tu Empresa
+                </span>
+              </span>
+            </h2>
             
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <div className="text-center">

@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, Clock, MessageSquare, DollarSign, Users, Settings, CreditCard, Headphones, Brain, FileText, ChevronRight, MapPin, Phone, Mail, User, Building2, TrendingUp, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  trackFormStarted, 
+  trackFormStepCompleted, 
+  trackFormSubmitted, 
+  trackWhatsappProvided, 
+  trackScrolledToSection 
+} from '@/lib/mixpanel-events';
 
 interface Question {
   id: number;
@@ -125,21 +132,58 @@ const FormSection = () => {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   
+  // Tracking refs
+  const formStartTime = useRef<number>(Date.now());
+  const stepStartTime = useRef<number>(Date.now());
+  const hasTrackedFormStart = useRef<boolean>(false);
+  const hasTrackedSection = useRef<boolean>(false);
+  const pageLoadTime = useRef(Date.now());
+  
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => setIsIntersecting(entry.isIntersecting),
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting);
+        
+        // Trackear cuando el usuario llega a la sección del formulario
+        if (entry.isIntersecting && !hasTrackedSection.current) {
+          hasTrackedSection.current = true;
+          const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
+          trackScrolledToSection('form', 3, timeOnPage);
+          
+          // También trackear form_started si el usuario llega a ver el formulario
+          if (!hasTrackedFormStart.current) {
+            hasTrackedFormStart.current = true;
+            trackFormStarted('main-form', questions.length);
+          }
+        }
+      },
       { threshold: 0.3 }
     );
     
     if (formRef.current) observer.observe(formRef.current);
-    return () => formRef.current && observer.unobserve(formRef.current);
+    return () => {
+      if (formRef.current) observer.unobserve(formRef.current);
+    };
   }, []);
   
   const currentQuestion = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
   
   const handleSingleSelect = (value: string) => {
+    // Trackear la selección del paso actual
+    const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
+    trackFormStepCompleted(
+      currentStep + 1,
+      currentQuestion.text,
+      [value],
+      timeOnStep,
+      currentQuestion.required
+    );
+    
     setFormData({ ...formData, [currentQuestion.id]: value });
+    
+    // Reset timer para el siguiente paso
+    stepStartTime.current = Date.now();
     
     // Auto-advance only for single-select questions
     setTimeout(() => {
@@ -166,9 +210,34 @@ const FormSection = () => {
         [field]: value
       }
     });
+    
+    // Trackear cuando se proporciona WhatsApp
+    if (field === 'phone' && value && !formData.contactInfo.phone) {
+      trackWhatsappProvided(value, {
+        name: formData.contactInfo.name,
+        email: formData.contactInfo.email,
+        company: formData.contactInfo.company
+      });
+    }
   };
   
   const handleNext = () => {
+    // Trackear el paso completado
+    const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
+    const currentAnswer = formData[currentQuestion.id];
+    const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
+    
+    trackFormStepCompleted(
+      currentStep + 1,
+      currentQuestion.text,
+      selectedOptions,
+      timeOnStep,
+      currentQuestion.required
+    );
+    
+    // Reset timer para el siguiente paso
+    stepStartTime.current = Date.now();
+    
     if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -177,6 +246,7 @@ const FormSection = () => {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      stepStartTime.current = Date.now();
     }
   };
   
@@ -201,6 +271,35 @@ const FormSection = () => {
     if (!canProceed()) return;
     
     try {
+      // Trackear el último paso completado
+      const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
+      trackFormStepCompleted(
+        currentStep + 1,
+        currentQuestion.text,
+        [],
+        timeOnStep,
+        currentQuestion.required
+      );
+      
+      // Preparar y trackear el envío completo del formulario
+      const totalCompletionTime = (Date.now() - formStartTime.current) / 1000;
+      
+      // Crear objeto de respuestas
+      const selectedAnswers: Record<string, string | string[]> = {};
+      questions.forEach((question) => {
+        if (question.type !== 'contact-form' && formData[question.id]) {
+          selectedAnswers[question.text] = formData[question.id];
+        }
+      });
+      
+      // Trackear el envío completo
+      trackFormSubmitted(
+        questions.length,
+        totalCompletionTime,
+        formData.contactInfo,
+        selectedAnswers
+      );
+      
       // Simulate API call
       setIsSubmitted(true);
       toast.success("¡Roadmap generado! Check tu email en 24 horas", {

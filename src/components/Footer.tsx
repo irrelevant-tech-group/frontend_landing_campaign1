@@ -1,15 +1,30 @@
 import { ArrowUp, ArrowRight } from 'lucide-react';
+import { trackHeroCTAClick } from '@/lib/mixpanel-events';
 
 const Footer = () => {
   const scrollToTop = () => {
+    // Trackear el click del botón de scroll to top
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick('Scroll to Top', 'footer_scroll_top', scrollDepth);
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   const scrollToForm = () => {
+    // Trackear el click del CTA principal del footer
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick('Obtener mi roadmap gratis', 'footer', scrollDepth);
+    
     document.getElementById('form-section')?.scrollIntoView({ 
       behavior: 'smooth',
       block: 'start'
     });
+  };
+
+  const handleLegalLinkClick = (linkType: 'terms' | 'privacy') => {
+    // Trackear clicks en links legales
+    const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    trackHeroCTAClick(linkType === 'terms' ? 'Términos' : 'Privacidad', 'footer_legal', scrollDepth);
   };
   
   return (
@@ -44,8 +59,26 @@ const Footer = () => {
               © 2025 irrelevant. Todos los derechos reservados.
             </p>
             <div className="flex justify-center md:justify-end gap-4">
-              <a href="#" className="text-sm text-future-white/60 hover:text-electric-purple transition-colors">Términos</a>
-              <a href="#" className="text-sm text-future-white/60 hover:text-electric-purple transition-colors">Privacidad</a>
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLegalLinkClick('terms');
+                }}
+                className="text-sm text-future-white/60 hover:text-electric-purple transition-colors"
+              >
+                Términos
+              </a>
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLegalLinkClick('privacy');
+                }}
+                className="text-sm text-future-white/60 hover:text-electric-purple transition-colors"
+              >
+                Privacidad
+              </a>
             </div>
           </div>
           
