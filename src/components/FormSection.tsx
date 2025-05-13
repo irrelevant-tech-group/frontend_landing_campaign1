@@ -11,6 +11,9 @@ import {
   trackScrolledToSection 
 } from '@/lib/mixpanel-events';
 
+// URL del backend - Ajusta según tu entorno
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 interface Question {
   id: number;
   text: string;
@@ -130,6 +133,7 @@ const FormSection = () => {
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   
   // Tracking refs
@@ -268,9 +272,12 @@ const FormSection = () => {
   };
   
   const handleSubmit = async () => {
-    if (!canProceed()) return;
+    if (!canProceed() || isSubmitting) return;
     
     try {
+      // Indicar que estamos procesando
+      setIsSubmitting(true);
+      
       // Trackear el último paso completado
       const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
       trackFormStepCompleted(
@@ -284,7 +291,7 @@ const FormSection = () => {
       // Preparar y trackear el envío completo del formulario
       const totalCompletionTime = (Date.now() - formStartTime.current) / 1000;
       
-      // Crear objeto de respuestas
+      // Crear objeto de respuestas para tracking
       const selectedAnswers: Record<string, string | string[]> = {};
       questions.forEach((question) => {
         if (question.type !== 'contact-form' && formData[question.id]) {
@@ -300,13 +307,57 @@ const FormSection = () => {
         selectedAnswers
       );
       
-      // Simulate API call
-      setIsSubmitted(true);
-      toast.success("¡Roadmap generado! Check tu email en 24 horas", {
+      // Preparar datos para enviar al backend
+      const payload = {
+        contactInfo: formData.contactInfo,
+        responses: {
+          areasToImprove: Array.isArray(formData[1]) ? formData[1] : [],
+          timeConsumingTasks: Array.isArray(formData[2]) ? formData[2] : [],
+          currentTools: Array.isArray(formData[3]) ? formData[3] : [],
+          operationalChallenges: Array.isArray(formData[4]) ? formData[4] : [],
+          companySize: formData[5] as string
+        }
+      };
+      
+      // Log para depuración
+      console.log('Enviando datos al backend:', payload);
+      
+      // Realizar la llamada a la API
+      const response = await fetch(`${BACKEND_URL}/api/submit-form`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      const data = await response.json();
+      
+      // Verificar si la respuesta fue exitosa
+      if (response.ok) {
+        console.log('Respuesta del servidor:', data);
+        
+        // Actualizar la UI
+        setIsSubmitted(true);
+        toast.success(data.message || "¡Roadmap generado! Revisa tu email en las próximas 24 horas", {
+          position: "bottom-right",
+        });
+      } else {
+        // Manejar errores del servidor
+        console.error('Error del servidor:', data);
+        toast.error(data.message || "Error al enviar. Por favor intenta nuevamente.", {
+          position: "bottom-right",
+        });
+      }
+    } catch (error) {
+      // Manejar errores de red o excepciones
+      console.error('Error en la solicitud:', error);
+      toast.error("Error de conexión. Por favor verifica tu conexión a internet e intenta nuevamente.", {
         position: "bottom-right",
       });
-    } catch (error) {
-      toast.error("Error al enviar. Intenta nuevamente.");
+    } finally {
+      // Desactivar indicador de carga
+      setIsSubmitting(false);
     }
   };
   
@@ -493,11 +544,20 @@ const FormSection = () => {
                         {currentStep === questions.length - 1 ? (
                           <Button
                             onClick={handleSubmit}
-                            disabled={!canProceed()}
+                            disabled={!canProceed() || isSubmitting}
                             className="bg-gradient-to-r from-electric-purple to-cyan-400 hover:from-electric-purple/90 hover:to-cyan-400/90 text-future-white px-8 py-3 rounded-full transition-all duration-300 shadow-[0_0_30px_rgba(103,232,249,0.3)] disabled:opacity-50 group"
                           >
-                            Generar mi roadmap
-                            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            {isSubmitting ? (
+                              <>
+                                <span className="animate-pulse">Procesando...</span>
+                                <div className="ml-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              </>
+                            ) : (
+                              <>
+                                Generar mi roadmap
+                                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </>
+                            )}
                           </Button>
                         ) : currentQuestion.type === 'multi-select' || currentQuestion.type === 'contact-form' ? (
                           <Button
