@@ -332,7 +332,8 @@ const FormSection = () => {
       });
       
       const data = await response.json();
-      
+      console.log('DATAAAAA',data);
+      console.log('RESPONSEEEE',response);
       // Verificar si la respuesta fue exitosa
       if (response.ok) {
         console.log('Respuesta del servidor:', data);
