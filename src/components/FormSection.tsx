@@ -319,6 +319,7 @@ const FormSection = () => {
         }
       };
       
+      console.log('BACKEND_URLLLLLLL',BACKEND_URL);
       // Log para depuración
       console.log('Enviando datos al backend:', payload);
       
