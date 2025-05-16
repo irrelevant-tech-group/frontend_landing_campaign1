@@ -13,27 +13,27 @@ interface TimelineEvent {
 
 const timelineEvents: TimelineEvent[] = [
   {
-    timestamp: "ENERO 2024",
-    event: "ChatGPT llega a 100M de usuarios",
+    timestamp: "JUNIO 2025",
+    event: "ChatGPT llega a 600M de usuarios semanales",
     impact: "Tu competencia empieza a experimentar",
     cost: "Comienzas a quedarte atrás"
   },
   {
-    timestamp: "MARZO 2024",
+    timestamp: "AGOSTO 2025",
     event: "Automatización masiva en LATAM",
     impact: "Empresas automatizan procesos simples",
     cost: "Te tardas 3x más en operaciones básicas",
     isNegative: true
   },
   {
-    timestamp: "JUNIO 2024",
+    timestamp: "OCTUBRE 2025",
     event: "Clientes esperan respuestas instantáneas",
     impact: "El mercado cambió sus expectativas",
     cost: "Pierdes clientes por lentitud",
     isNegative: true
   },
   {
-    timestamp: "HOY",
+    timestamp: "DICIEMBRE 2025",
     event: "El costo de implementar subió",
     impact: "La ventana de oportunidad se cierra",
     cost: "Cada día que esperas es dinero tirado a la basura",
@@ -114,7 +114,7 @@ const TimelineSection = () => {
             transition={{ delay: 0.2 }}
             className="text-xl text-urgency-red max-w-3xl mx-auto"
           >
-            Esto es lo que pasó en los últimos 6 meses. Y por qué cada día cuenta.
+            Esto es lo que pasara en los proximos 6 meses. Y por qué cada día cuenta.
           </motion.p>
         </div>
 

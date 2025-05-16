@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import IdealForSection from "@/components/IdealForSection";
 import FormSection from "@/components/FormSection";
 import TimelineSection from "@/components/TimelineSection";
 import SocialProofSection from "@/components/SocialProofSection";
@@ -11,6 +12,7 @@ const Index = () => {
   // Nota: Algunas secciones ya tienen sus propios IDs (como form-section)
   useScrollTracking([
     { id: 'hero-section', name: 'hero' },
+    { id: 'ideal-for-section', name: 'ideal_for' },
     { id: 'form-section', name: 'form' },
     { id: 'timeline-section', name: 'timeline' },
     { id: 'social-proof-section', name: 'social_proof' },
@@ -24,6 +26,7 @@ const Index = () => {
         <HeroSection />
       </div>
       <FormSection />
+      <IdealForSection />
       <div id="timeline-section">
         <TimelineSection />
       </div>
