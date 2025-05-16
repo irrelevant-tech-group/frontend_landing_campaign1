@@ -106,7 +106,7 @@ const TimelineSection = () => {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             className="text-4xl md:text-6xl font-bold text-future-white mb-6"
           >
-            Mientras tú pensabas...
+            Mientras lo dudabas...
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -114,7 +114,7 @@ const TimelineSection = () => {
             transition={{ delay: 0.2 }}
             className="text-xl text-urgency-red max-w-3xl mx-auto"
           >
-            Esto es lo que pasara en los proximos 6 meses. Y por qué cada día cuenta.
+            Así cambiará todo en los próximos 6 meses. Y sí, cada día cuenta.
           </motion.p>
         </div>
 
@@ -250,7 +250,7 @@ const TimelineSection = () => {
                       onClick={handleNotNowClick}
                       className="border border-urgency-red/30 text-urgency-red hover:bg-urgency-red/10 px-8 py-4 rounded-full transition-all duration-300"
                     >
-                      No, prefiero esperar y ver
+                      No, prefiero esperar
                     </button>
                   </div>
                 </div>

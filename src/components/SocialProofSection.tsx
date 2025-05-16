@@ -165,8 +165,8 @@ const SocialProofSection = () => {
       
       <div className="container mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-future-white via-cosmic-light to-future-white bg-clip-text text-transparent mb-4">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-future-white via-cosmic-light to-future-white bg-clip-text text-transparent mb-4">
             Lo que dicen quienes ya tienen su roadmap
           </h2>
           <p className="text-lg text-future-white/80 max-w-2xl mx-auto">
@@ -176,7 +176,7 @@ const SocialProofSection = () => {
         
         {/* Testimonials Carousel */}
         <div className="max-w-4xl mx-auto mb-12">
-          <div className="relative min-h-[320px] overflow-hidden">
+          <div className="relative min-h-[400px] sm:min-h-[320px] overflow-hidden">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.id}
@@ -189,7 +189,7 @@ const SocialProofSection = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="absolute w-full"
               >
-                <div className="bg-void-dark/60 backdrop-blur-sm border border-electric-purple/20 rounded-2xl p-8 relative">
+                <div className="bg-void-dark/60 backdrop-blur-sm border border-electric-purple/20 rounded-2xl p-6 sm:p-8 relative">
                   {/* Quote Icon */}
                   <Quote className="absolute top-6 right-6 w-8 h-8 text-electric-purple/20" />
                   
@@ -246,6 +246,7 @@ const SocialProofSection = () => {
                     ? 'bg-electric-purple w-8' 
                     : 'bg-electric-purple/30 hover:bg-electric-purple/50'
                 }`}
+                aria-label={`Testimonial ${index + 1}`}
               />
             ))}
           </div>
