@@ -76,7 +76,7 @@ const Footer = () => {
               <MessageSquare className="w-8 h-8 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="text-xl font-bold text-future-white mb-1">Comunidad OS By irrelevant</h4>
+              <h4 className="text-xl font-bold text-future-white mb-1">Comunidad Stay irrelevant</h4>
               <p className="text-future-white/80 mb-2">100% gratuita donde aprendes a implementar herramientas de tecnología y procesos automatizables sin morir en el intento.</p>
               <button 
                 onClick={joinWhatsAppCommunity}

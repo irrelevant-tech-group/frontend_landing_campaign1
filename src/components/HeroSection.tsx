@@ -15,7 +15,7 @@ const HeroSection = () => {
   const phrases = [
     { text: "Pocos la implementan.", icon: <Target className="inline-block w-5 h-5 sm:w-6 sm:h-6 text-electric-purple ml-2" /> },
     { text: "Tu competencia ya lo hace.", icon: <Zap className="inline-block w-5 h-5 sm:w-6 sm:h-6 text-success-neon ml-2" /> },
-    { text: "¿Tú cuándo?", icon: <div className="inline-block w-5 h-5 sm:w-6 sm:h-6 ml-2 text-xl sm:text-2xl">⏰</div> }
+    { text: "¿Y tú, cuándo lo harás?", icon: <div className="inline-block w-5 h-5 sm:w-6 sm:h-6 ml-2 text-xl sm:text-2xl">⏰</div> }
   ];
   
   useEffect(() => {
