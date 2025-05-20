@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Skull, AlertCircle, TrendingUp, CheckCircle } from 'lucide-react';
 import { trackScrolledToSection, trackHeroCTAClick } from '@/lib/mixpanel-events';
+import { trackCTAClick, trackSectionView } from '@/lib/facebook-pixel';
 
 interface TimelineEvent {
   timestamp: string;
@@ -58,6 +59,9 @@ const TimelineSection = () => {
           hasTrackedSection.current = true;
           const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
           trackScrolledToSection('timeline', 4, timeOnPage);
+          
+          // Facebook Pixel - trackear vista de sección
+          trackSectionView('timeline');
         }
       },
       { threshold: 0.2 }
@@ -74,6 +78,9 @@ const TimelineSection = () => {
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick('Sí, quiero mi roadmap ahora', 'timeline_cta', scrollDepth);
     
+    // Facebook Pixel - trackear click en CTA
+    trackCTAClick('timeline_obtener_roadmap');
+    
     // Hacer scroll al formulario
     document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -82,6 +89,9 @@ const TimelineSection = () => {
     // Trackear el click del botón "No, prefiero esperar y ver"
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick('No, prefiero esperar y ver', 'timeline_negative_cta', scrollDepth);
+    
+    // Facebook Pixel - trackear click en CTA negativo
+    trackCTAClick('timeline_negative_cta');
   };
 
   const handleEventClick = (index: number) => {
@@ -91,6 +101,9 @@ const TimelineSection = () => {
     const event = timelineEvents[index];
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick(`Timeline Event: ${event.event}`, 'timeline_event', scrollDepth);
+    
+    // Facebook Pixel - trackear interacción con eventos de timeline
+    trackCTAClick(`timeline_event_${index}`);
   };
 
   return (

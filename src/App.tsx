@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useSessionTracking } from "@/hooks/useSessionTracking";
+import { useEffect } from 'react';
+import { trackPageView } from '@/lib/facebook-pixel';
 
 const queryClient = new QueryClient();
 
@@ -13,6 +15,11 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   // Hook para trackear sesiones automáticamente
   useSessionTracking();
+  
+  // Trackear vista de página con Facebook Pixel
+  useEffect(() => {
+    trackPageView();
+  }, []);
   
   return (
     <Routes>
