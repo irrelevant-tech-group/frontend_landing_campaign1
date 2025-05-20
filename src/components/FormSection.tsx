@@ -1,15 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Clock, MessageSquare, DollarSign, Users, Settings, CreditCard, Headphones, Brain, FileText, ChevronRight, MapPin, Phone, Mail, User, Building2, TrendingUp, AlertCircle } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Clock,
+  MessageSquare,
+  DollarSign,
+  Users,
+  Settings,
+  CreditCard,
+  Headphones,
+  Brain,
+  FileText,
+  ChevronRight,
+  TrendingUp,
+  AlertCircle
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { 
-  trackFormStarted, 
-  trackFormStepCompleted, 
-  trackFormSubmitted, 
-  trackWhatsappProvided, 
-  trackScrolledToSection 
+import {
+  trackFormStarted,
+  trackFormStepCompleted,
+  trackFormSubmitted,
+  trackWhatsappProvided,
+  trackScrolledToSection
 } from '@/lib/mixpanel-events';
+import {
+  trackFormStart,
+  trackFormSubmit,
+  trackSectionView,
+  trackJoinWhatsApp
+} from '@/lib/facebook-pixel';
 
 // URL del backend - Ajusta según tu entorno
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
@@ -127,78 +148,67 @@ interface FormData {
 const FormSection = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({
-    contactInfo: {
-      name: '',
-      company: '',
-      email: '',
-      phone: ''
-    }
+    contactInfo: { name: '', company: '', email: '', phone: '' }
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
-  
+
   // Tracking refs
   const formStartTime = useRef<number>(Date.now());
   const stepStartTime = useRef<number>(Date.now());
   const hasTrackedFormStart = useRef<boolean>(false);
   const hasTrackedSection = useRef<boolean>(false);
   const pageLoadTime = useRef(Date.now());
-  
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsIntersecting(entry.isIntersecting);
-        
-        // Trackear cuando el usuario llega a la sección del formulario
         if (entry.isIntersecting && !hasTrackedSection.current) {
           hasTrackedSection.current = true;
           const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
           trackScrolledToSection('form', 3, timeOnPage);
-          
-          // También trackear form_started si el usuario llega a ver el formulario
+          trackSectionView('form');
           if (!hasTrackedFormStart.current) {
             hasTrackedFormStart.current = true;
             trackFormStarted('main-form', questions.length);
+            trackFormStart();
           }
         }
       },
       { threshold: 0.3 }
     );
-    
     if (formRef.current) observer.observe(formRef.current);
     return () => {
       if (formRef.current) observer.unobserve(formRef.current);
     };
   }, []);
-  
-  // Efecto para ajustar altura mínima en dispositivos móviles
+
   useEffect(() => {
     const updateMinHeight = () => {
       if (formRef.current) {
         const viewportHeight = window.innerHeight;
-        // Ajustar altura mínima para evitar problemas en móviles
-        document.documentElement.style.setProperty('--viewport-height', `${viewportHeight}px`);
+        document.documentElement.style.setProperty(
+          '--viewport-height',
+          `${viewportHeight}px`
+        );
       }
     };
-    
-    // Actualizar al cargar y en cambio de tamaño
     updateMinHeight();
     window.addEventListener('resize', updateMinHeight);
     window.addEventListener('orientationchange', updateMinHeight);
-    
     return () => {
       window.removeEventListener('resize', updateMinHeight);
       window.removeEventListener('orientationchange', updateMinHeight);
     };
   }, []);
-  
+
   const currentQuestion = questions[currentStep];
   const progress = ((currentStep + 1) / questions.length) * 100;
-  
+
   const handleSingleSelect = (value: string) => {
-    // Trackear la selección del paso actual
     const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
     trackFormStepCompleted(
       currentStep + 1,
@@ -207,13 +217,8 @@ const FormSection = () => {
       timeOnStep,
       currentQuestion.required
     );
-    
     setFormData({ ...formData, [currentQuestion.id]: value });
-    
-    // Reset timer para el siguiente paso
     stepStartTime.current = Date.now();
-    
-    // Auto-advance only for single-select questions
     setTimeout(() => {
       if (currentStep < questions.length - 1) {
         setCurrentStep(currentStep + 1);
@@ -224,22 +229,16 @@ const FormSection = () => {
   const handleMultiSelect = (value: string) => {
     const currentValues = (formData[currentQuestion.id] as string[]) || [];
     const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
+      ? currentValues.filter((v) => v !== value)
       : [...currentValues, value];
-    
     setFormData({ ...formData, [currentQuestion.id]: newValues });
   };
-  
+
   const handleContactChange = (field: string, value: string) => {
     setFormData({
       ...formData,
-      contactInfo: {
-        ...formData.contactInfo,
-        [field]: value
-      }
+      contactInfo: { ...formData.contactInfo, [field]: value }
     });
-    
-    // Trackear cuando se proporciona WhatsApp
     if (field === 'phone' && value && !formData.contactInfo.phone) {
       trackWhatsappProvided(value, {
         name: formData.contactInfo.name,
@@ -248,13 +247,11 @@ const FormSection = () => {
       });
     }
   };
-  
+
   const handleNext = () => {
-    // Trackear el paso completado
     const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
-    const currentAnswer = formData[currentQuestion.id];
-    const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
-    
+    const answer = formData[currentQuestion.id];
+    const selectedOptions = Array.isArray(answer) ? answer : [];
     trackFormStepCompleted(
       currentStep + 1,
       currentQuestion.text,
@@ -262,47 +259,39 @@ const FormSection = () => {
       timeOnStep,
       currentQuestion.required
     );
-    
-    // Reset timer para el siguiente paso
     stepStartTime.current = Date.now();
-    
     if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
-  
+
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
       stepStartTime.current = Date.now();
     }
   };
-  
+
   const canProceed = () => {
     if (currentQuestion.type === 'contact-form') {
-      return formData.contactInfo.name.trim() && 
-             formData.contactInfo.company.trim() && 
-             formData.contactInfo.email.trim();
+      return (
+        formData.contactInfo.name.trim() &&
+        formData.contactInfo.company.trim() &&
+        formData.contactInfo.email.trim()
+      );
     }
-    
     const value = formData[currentQuestion.id];
     if (!currentQuestion.required) return true;
-    
     if (currentQuestion.type === 'multi-select') {
-      return value && (value as string[]).length > 0;
+      return Array.isArray(value) && value.length > 0;
     }
-    
-    return value && value !== '';
+    return typeof value === 'string' && value !== '';
   };
-  
+
   const handleSubmit = async () => {
     if (!canProceed() || isSubmitting) return;
-    
     try {
-      // Indicar que estamos procesando
       setIsSubmitting(true);
-      
-      // Trackear el último paso completado
       const timeOnStep = (Date.now() - stepStartTime.current) / 1000;
       trackFormStepCompleted(
         currentStep + 1,
@@ -311,27 +300,19 @@ const FormSection = () => {
         timeOnStep,
         currentQuestion.required
       );
-      
-      // Preparar y trackear el envío completo del formulario
       const totalCompletionTime = (Date.now() - formStartTime.current) / 1000;
-      
-      // Crear objeto de respuestas para tracking
       const selectedAnswers: Record<string, string | string[]> = {};
-      questions.forEach((question) => {
-        if (question.type !== 'contact-form' && formData[question.id]) {
-          selectedAnswers[question.text] = formData[question.id];
+      questions.forEach((q) => {
+        if (q.type !== 'contact-form' && formData[q.id]) {
+          selectedAnswers[q.text] = formData[q.id];
         }
       });
-      
-      // Trackear el envío completo
       trackFormSubmitted(
         questions.length,
         totalCompletionTime,
         formData.contactInfo,
         selectedAnswers
       );
-      
-      // Preparar datos para enviar al backend
       const payload = {
         contactInfo: formData.contactInfo,
         responses: {
@@ -342,51 +323,44 @@ const FormSection = () => {
           companySize: formData[5] as string
         }
       };
-      
-      console.log('BACKEND_URLLLLLLL',BACKEND_URL);
-      // Log para depuración
       console.log('Enviando datos al backend:', payload);
-      
-      // Realizar la llamada a la API
       const response = await fetch(`${BACKEND_URL}/api/submit-form`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-      
       const data = await response.json();
-      console.log('DATAAAAA',data);
-      console.log('RESPONSEEEE',response);
-      // Verificar si la respuesta fue exitosa
       if (response.ok) {
         console.log('Respuesta del servidor:', data);
-        
-        // Actualizar la UI
+        trackFormSubmit();
         setIsSubmitted(true);
-        toast.success(data.message || "¡Roadmap generado! Revisa tu email en las próximas 24 horas", {
-          position: "bottom-right",
-        });
+        toast.success(
+          data.message || "¡Roadmap generado! Revisa tu email en las próximas 24 horas",
+          { position: "bottom-right" }
+        );
       } else {
-        // Manejar errores del servidor
         console.error('Error del servidor:', data);
-        toast.error(data.message || "Error al enviar. Por favor intenta nuevamente.", {
-          position: "bottom-right",
-        });
+        toast.error(
+          data.message || "Error al enviar. Por favor intenta nuevamente.",
+          { position: "bottom-right" }
+        );
       }
     } catch (error) {
-      // Manejar errores de red o excepciones
       console.error('Error en la solicitud:', error);
-      toast.error("Error de conexión. Por favor verifica tu conexión a internet e intenta nuevamente.", {
-        position: "bottom-right",
-      });
+      toast.error(
+        "Error de conexión. Por favor verifica tu conexión a internet e intenta nuevamente.",
+        { position: "bottom-right" }
+      );
     } finally {
-      // Desactivar indicador de carga
       setIsSubmitting(false);
     }
   };
-  
+
+  const handleJoinWhatsApp = () => {
+    trackJoinWhatsApp();
+    window.open(WHATSAPP_COMMUNITY_LINK, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <section id="form-section" className="py-10 sm:py-20 px-4" ref={formRef}>
       <div className="container mx-auto">
@@ -407,7 +381,7 @@ const FormSection = () => {
                 Responde como si hablaras con tu socio. Te devolvemos un plan real y accionable.
               </p>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="mb-6 sm:mb-10">
               <div className="flex justify-between text-sm text-cosmic-light/70 mb-2">
@@ -415,17 +389,17 @@ const FormSection = () => {
                 <span>{Math.round(progress)}%</span>
               </div>
               <div className="h-2 sm:h-3 bg-electric-purple/10 rounded-full overflow-hidden">
-                <motion.div 
+                <motion.div
                   className="h-full bg-gradient-to-r from-electric-purple via-neon-purple to-cyan-400 rounded-full relative"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 >
-                  <div className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white rounded-full animate-pulse"></div>
+                  <div className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white rounded-full animate-pulse" />
                 </motion.div>
               </div>
             </div>
-            
+
             {/* Form Content */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-electric-purple/5 rounded-xl sm:rounded-3xl blur-3xl" />
@@ -452,7 +426,7 @@ const FormSection = () => {
                           </p>
                         )}
                       </div>
-                      
+
                       {/* Answer Options or Contact Form */}
                       <div className="flex-1">
                         {currentQuestion.type === 'contact-form' ? (
@@ -521,20 +495,26 @@ const FormSection = () => {
                               </div>
                             </div>
                           </div>
-                        ) : currentQuestion.options && (
+                        ) : currentQuestion.options ? (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                             {currentQuestion.options.map((option) => (
                               <motion.button
                                 key={option.id}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => currentQuestion.type === 'single-select' 
-                                  ? handleSingleSelect(option.id) 
-                                  : handleMultiSelect(option.id)}
+                                onClick={() =>
+                                  currentQuestion.type === 'single-select'
+                                    ? handleSingleSelect(option.id)
+                                    : handleMultiSelect(option.id)
+                                }
                                 className={`relative p-3 sm:p-5 rounded-lg sm:rounded-xl border transition-all duration-300 text-left ${
-                                  currentQuestion.type === 'single-select' && formData[currentQuestion.id] === option.id
+                                  currentQuestion.type === 'single-select' &&
+                                  formData[currentQuestion.id] === option.id
                                     ? 'border-cyan-400 bg-cyan-400/10 shadow-[0_0_20px_rgba(103,232,249,0.2)]'
-                                    : currentQuestion.type === 'multi-select' && ((formData[currentQuestion.id] as string[]) || []).includes(option.id)
+                                    : currentQuestion.type === 'multi-select' &&
+                                      ((formData[currentQuestion.id] as string[]) || []).includes(
+                                        option.id
+                                      )
                                     ? 'border-cyan-400 bg-cyan-400/10 shadow-[0_0_20px_rgba(103,232,249,0.2)]'
                                     : 'border-cyan-400/20 hover:border-cyan-400/40 hover:bg-cyan-400/5'
                                 }`}
@@ -545,29 +525,36 @@ const FormSection = () => {
                                       <option.icon className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
                                     </div>
                                   )}
-                                  <span className="text-future-white text-base sm:text-lg">{option.text}</span>
-                                  {((currentQuestion.type === 'single-select' && formData[currentQuestion.id] === option.id) ||
-                                    (currentQuestion.type === 'multi-select' && ((formData[currentQuestion.id] as string[]) || []).includes(option.id))) && (
+                                  <span className="text-future-white text-base sm:text-lg">
+                                    {option.text}
+                                  </span>
+                                  {((currentQuestion.type === 'single-select' &&
+                                    formData[currentQuestion.id] === option.id) ||
+                                    (currentQuestion.type === 'multi-select' &&
+                                      ((formData[currentQuestion.id] as string[]) || []).includes(
+                                        option.id
+                                      ))) && (
                                     <Check className="absolute right-3 sm:right-4 top-3 sm:top-4 w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
                                   )}
                                 </div>
                               </motion.button>
                             ))}
                           </div>
-                        )}
+                        ) : null}
                       </div>
-                      
+
                       {/* Navigation */}
                       <div className="mt-6 sm:mt-8 flex justify-between items-center">
                         <Button
                           onClick={handleBack}
                           variant="ghost"
-                          className={`text-future-white/70 hover:text-future-white text-sm sm:text-base ${currentStep === 0 ? 'invisible' : ''}`}
+                          className={`text-future-white/70 hover:text-future-white text-sm sm:text-base ${
+                            currentStep === 0 ? 'invisible' : ''
+                          }`}
                           disabled={currentStep === 0}
                         >
                           Atrás
                         </Button>
-                        
                         {currentStep === questions.length - 1 ? (
                           <Button
                             onClick={handleSubmit}
@@ -577,7 +564,7 @@ const FormSection = () => {
                             {isSubmitting ? (
                               <>
                                 <span className="animate-pulse">Procesando...</span>
-                                <div className="ml-2 w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="ml-2 w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                               </>
                             ) : (
                               <>
@@ -586,7 +573,8 @@ const FormSection = () => {
                               </>
                             )}
                           </Button>
-                        ) : currentQuestion.type === 'multi-select' || currentQuestion.type === 'contact-form' ? (
+                        ) : (currentQuestion.type === 'multi-select' ||
+                            currentQuestion.type === 'contact-form') ? (
                           <Button
                             onClick={handleNext}
                             disabled={!canProceed()}
@@ -607,58 +595,57 @@ const FormSection = () => {
                     className="text-center py-8 sm:py-12"
                   >
                     <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-full bg-gradient-to-r from-electric-purple to-cyan-400 flex items-center justify-center">
-  <Check className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
-</div>
-<h3 className="text-2xl sm:text-3xl font-bold text-future-white mb-3 sm:mb-4">
-  ¡Roadmap generado!
-</h3>
-<p className="text-future-white/80 max-w-md mx-auto text-base sm:text-lg">
-  Te enviaremos tu estrategia personalizada a 
-  <span className="text-cyan-400 font-medium"> {formData.contactInfo.email}</span> 
-  <span className="block mt-2">en las próximas 24 horas.</span>
-</p>
+                      <Check className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-future-white mb-3 sm:mb-4">
+                      ¡Roadmap generado!
+                    </h3>
+                    <p className="text-future-white/80 max-w-md mx-auto text-base sm:text-lg">
+                      Te enviaremos tu estrategia personalizada a{' '}
+                      <span className="text-cyan-400 font-medium">
+                        {formData.contactInfo.email}
+                      </span>{' '}
+                      <span className="block mt-2">en las próximas 24 horas.</span>
+                    </p>
 
-<div className="mt-4 sm:mt-6 px-4 py-3 sm:px-6 sm:py-4 rounded-lg sm:rounded-xl bg-cyan-400/10 border border-cyan-400/20 max-w-md mx-auto">
-  <p className="text-sm text-future-white/90 mb-2">
-    <AlertCircle className="w-4 h-4 inline-block mr-2 text-cyan-400" />
-    <span className="font-medium">Importante:</span> Recuerda revisar la carpeta de SPAM si no ves nuestro email.
-  </p>
-</div>
+                    <div className="mt-4 sm:mt-6 px-4 py-3 sm:px-6 sm:py-4 rounded-lg sm:rounded-xl bg-cyan-400/10 border border-cyan-400/20 max-w-md mx-auto">
+                      <p className="text-sm text-future-white/90 mb-2">
+                        <AlertCircle className="w-4 h-4 inline-block mr-2 text-cyan-400" />
+                        <span className="font-medium">Importante:</span> Recuerda revisar la carpeta de SPAM si no ves nuestro email.
+                      </p>
+                    </div>
 
-<div className="mt-6 sm:mt-8">
-  <a
-    href={WHATSAPP_COMMUNITY_LINK}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="inline-flex items-center px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-sm sm:text-base"
-  >
-    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-    Unirse a OS By irrelevant
-  </a>
-  <p className="mt-3 text-xs sm:text-sm text-future-white/60 max-w-md mx-auto">
-    Comunidad 100% gratuita donde enseñamos herramientas de tecnología, procesos automatizables y cómo implementarlos sin morir en el intento.
-  </p>
-</div>
+                    <div className="mt-6 sm:mt-8">
+                      <a
+                        href={WHATSAPP_COMMUNITY_LINK}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleJoinWhatsApp}
+                        className="inline-flex items-center px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-sm sm:text-base"
+                      >
+                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                        Unirse a OS By irrelevant
+                      </a>
+                      <p className="mt-3 text-xs sm:text-sm text-future-white/60 max-w-md mx-auto">
+                        Comunidad 100% gratuita donde enseñamos herramientas de tecnología, procesos automatizables y cómo implementarlos sin morir en el intento.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
 
-<div className="mt-6 text-sm text-future-white/60">
-  Síguenos en redes para más tips de automatización
-</div>
-</motion.div>
-)}
-</div>
-</div>
-
-{/* Footer */}
-<div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-future-white/60">
-  Al completar este formulario aceptas recibir comunicaciones de irrelevant. 
-  <br />Respetamos tu privacidad y nunca compartiremos tus datos.
-</div>
-</motion.div>
-</div>
-</div>
-</section>
-);
+            {/* Footer */}
+            <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-future-white/60">
+              Al completar este formulario aceptas recibir comunicaciones de irrelevant.
+              <br />
+              Respetamos tu privacidad y nunca compartiremos tus datos.
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
 };
 
 export default FormSection;
-                      

@@ -1,10 +1,34 @@
 import { ArrowUp, ArrowRight, MessageSquare } from 'lucide-react';
 import { trackHeroCTAClick } from '@/lib/mixpanel-events';
+import { trackCTAClick, trackJoinWhatsApp, trackSectionView } from '@/lib/facebook-pixel';
+import { useEffect, useRef } from 'react';
 
 // URL de la comunidad de WhatsApp
 const WHATSAPP_COMMUNITY_LINK = 'https://chat.whatsapp.com/JMSMme18JN9B6zHdRC6ZGg';
 
 const Footer = () => {
+  const footerRef = useRef(null);
+  const hasTrackedSection = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Trackear cuando el usuario llega a la sección footer
+        if (entry.isIntersecting && !hasTrackedSection.current) {
+          hasTrackedSection.current = true;
+          // Facebook Pixel - trackear vista de sección footer
+          trackSectionView('footer');
+        }
+      },
+      { threshold: 0.2 }
+    );
+    
+    if (footerRef.current) observer.observe(footerRef.current);
+    return () => {
+      if (footerRef.current) observer.unobserve(footerRef.current);
+    };
+  }, []);
+
   const scrollToTop = () => {
     // Trackear el click del botón de scroll to top
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
@@ -18,6 +42,9 @@ const Footer = () => {
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick('Obtener mi roadmap gratis', 'footer', scrollDepth);
     
+    // Facebook Pixel - trackear click en CTA
+    trackCTAClick('footer_obtener_roadmap');
+    
     document.getElementById('form-section')?.scrollIntoView({ 
       behavior: 'smooth',
       block: 'start'
@@ -29,6 +56,9 @@ const Footer = () => {
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick('Unirse a comunidad WhatsApp', 'footer_whatsapp', scrollDepth);
     
+    // Facebook Pixel - trackear conversión de WhatsApp
+    trackJoinWhatsApp();
+    
     // Abrir enlace de WhatsApp en nueva pestaña
     window.open(WHATSAPP_COMMUNITY_LINK, '_blank', 'noopener,noreferrer');
   };
@@ -37,10 +67,13 @@ const Footer = () => {
     // Trackear clicks en links legales
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick(linkType === 'terms' ? 'Términos' : 'Privacidad', 'footer_legal', scrollDepth);
+    
+    // Facebook Pixel - trackear click en links legales
+    trackCTAClick(`footer_legal_${linkType}`);
   };
   
   return (
-    <footer className="py-16 px-4 bg-void-dark border-t border-electric-purple/10">
+    <footer ref={footerRef} className="py-16 px-4 bg-void-dark border-t border-electric-purple/10">
       <div className="container mx-auto">
         {/* Main CTA Section */}
         <div className="max-w-3xl mx-auto text-center mb-12">

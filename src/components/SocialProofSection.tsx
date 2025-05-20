@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Quote, Download, Clock, CheckCircle } from 'lucide-react';
 import { trackScrolledToSection, trackHeroCTAClick } from '@/lib/mixpanel-events';
+import { trackCTAClick, trackSectionView } from '@/lib/facebook-pixel';
 
 interface Testimonial {
   id: number;
@@ -131,6 +132,9 @@ const SocialProofSection = () => {
           hasTrackedSection.current = true;
           const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
           trackScrolledToSection('social_proof', 5, timeOnPage);
+          
+          // Facebook Pixel - trackear vista de sección
+          trackSectionView('social_proof');
         }
       },
       { threshold: 0.3 }
@@ -148,12 +152,18 @@ const SocialProofSection = () => {
     // Trackear la interacción con la navegación de testimoniales
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick(`Testimonial Navigation: ${testimonials[index].author}`, 'testimonial_navigation', scrollDepth);
+    
+    // Facebook Pixel - trackear interacción con testimoniales
+    trackCTAClick(`testimonial_${index}_${testimonials[index].author.replace(/\s/g, '_')}`);
   };
 
   const handleBottomCTAClick = () => {
     // Trackear el click del CTA en la sección de social proof
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick('Obtener mi roadmap ahora', 'social_proof_cta', scrollDepth);
+    
+    // Facebook Pixel - trackear click en CTA
+    trackCTAClick('social_proof_obtener_roadmap');
     
     // Hacer scroll al formulario
     document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' });

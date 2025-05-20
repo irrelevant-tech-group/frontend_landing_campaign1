@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { trackScrolledToSection } from '@/lib/mixpanel-events';
+import { trackSectionView } from '@/lib/facebook-pixel';
 
 interface ScrollSection {
   id: string;
@@ -43,6 +44,9 @@ export const useScrollTracking = (sections: Array<{ id: string; name: string }>)
         if (scrolledIntoSection && isVisible && !trackedSections.has(section.id)) {
           trackedSections.add(section.id);
           trackScrolledToSection(section.name, section.position, timeOnPage);
+          
+          // Facebook Pixel - trackear vista de sección
+          trackSectionView(section.name);
         }
       });
     };

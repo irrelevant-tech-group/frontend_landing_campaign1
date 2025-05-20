@@ -4,6 +4,7 @@ import ParticleBackground from './ParticleBackground';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Settings, Target, Zap, Workflow } from 'lucide-react';
 import { trackHeroCTAClick, trackScrolledToSection } from '@/lib/mixpanel-events';
+import { trackCTAClick, trackSectionView } from '@/lib/facebook-pixel';
 
 const HeroSection = () => {
   const [currentPhrase, setCurrentPhrase] = useState(0);
@@ -28,6 +29,9 @@ const HeroSection = () => {
           hasTrackedSection.current = true;
           const timeOnPage = (Date.now() - pageLoadTime.current) / 1000;
           trackScrolledToSection('hero', 1, timeOnPage);
+          
+          // Facebook Pixel - trackear vista de sección hero
+          trackSectionView('hero');
         }
       },
       { threshold: 0.1 }
@@ -51,6 +55,9 @@ const HeroSection = () => {
     // Trackear el click del CTA principal
     const scrollDepth = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     trackHeroCTAClick('Obtener mi roadmap gratis', 'hero', scrollDepth);
+    
+    // Facebook Pixel - trackear clic en CTA
+    trackCTAClick('hero_obtener_roadmap');
     
     // Hacer scroll al formulario
     document.getElementById('form-section')?.scrollIntoView({ 
