@@ -22,10 +22,10 @@ const Index = () => {
   return (
     <div className="bg-void-dark min-h-screen">
       <Header />
+      <FormSection />
       <div id="hero-section">
         <HeroSection />
       </div>
-      <FormSection />
       <IdealForSection />
       <div id="timeline-section">
         <TimelineSection />
