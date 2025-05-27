@@ -1,32 +1,57 @@
-import ReactPixel from 'react-facebook-pixel';
-
 // ID del Pixel de Facebook
-const PIXEL_ID = '2425468451165587'; // Nuevo Pixel ID
+const PIXEL_ID = '2425468451165587';
 
-// Opciones de configuración
-const options = {
-  autoConfig: true,
-  debug: import.meta.env.DEV // Debug solo en desarrollo
-};
+// Variable para controlar si el pixel está inicializado
+let isPixelInitialized = false;
 
-// Función para inicializar el Pixel
+// Función para inicializar el Pixel de forma segura
 export const initFacebookPixel = (): void => {
-  if (typeof window !== 'undefined') {
-    try {
-      ReactPixel.init(PIXEL_ID, undefined, options);
+  // Verificar si estamos en el navegador
+  if (typeof window === 'undefined' || isPixelInitialized) {
+    return;
+  }
+
+  try {
+    // Inicialización manual del pixel (sin dependencias externas)
+    (function(f: any, b: Document, e: string, v: string, n?: any, t?: any, s?: any) {
+      if (f.fbq) return;
+      n = f.fbq = function() {
+        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+      };
+      if (!f._fbq) f._fbq = n;
+      n.push = n;
+      n.loaded = !0;
+      n.version = '2.0';
+      n.queue = [];
+      t = b.createElement(e);
+      t.async = !0;
+      t.src = v;
+      s = b.getElementsByTagName(e)[0];
+      s.parentNode?.insertBefore(t, s);
+    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+    // Inicializar el pixel
+    if (window.fbq) {
+      window.fbq('init', PIXEL_ID);
+      isPixelInitialized = true;
+      
       if (import.meta.env.DEV) {
         console.log('Facebook Pixel inicializado correctamente');
       }
-    } catch (error) {
-      console.error('Error al inicializar Facebook Pixel:', error);
     }
+  } catch (error) {
+    console.error('Error al inicializar Facebook Pixel:', error);
   }
 };
 
 // Evento de vista de página
 export const trackPageView = (): void => {
+  if (typeof window === 'undefined' || !isPixelInitialized || !window.fbq) {
+    return;
+  }
+
   try {
-    ReactPixel.pageView();
+    window.fbq('track', 'PageView');
     if (import.meta.env.DEV) {
       console.log('FB Pixel: PageView tracked');
     }
@@ -37,8 +62,12 @@ export const trackPageView = (): void => {
 
 // Evento de inicio de formulario
 export const trackFormStart = (): void => {
+  if (typeof window === 'undefined' || !isPixelInitialized || !window.fbq) {
+    return;
+  }
+
   try {
-    ReactPixel.track('InitiateCheckout', {
+    window.fbq('track', 'InitiateCheckout', {
       content_category: 'form',
       content_name: 'roadmap_ai_form'
     });
@@ -52,8 +81,12 @@ export const trackFormStart = (): void => {
 
 // Evento de envío de formulario completado
 export const trackFormSubmit = (value = 0): void => {
+  if (typeof window === 'undefined' || !isPixelInitialized || !window.fbq) {
+    return;
+  }
+
   try {
-    ReactPixel.track('Lead', {
+    window.fbq('track', 'Lead', {
       content_name: 'roadmap_ai_lead',
       value: value,
       currency: 'COP'
@@ -68,8 +101,12 @@ export const trackFormSubmit = (value = 0): void => {
 
 // Eventos de CTA
 export const trackCTAClick = (ctaName: string): void => {
+  if (typeof window === 'undefined' || !isPixelInitialized || !window.fbq) {
+    return;
+  }
+
   try {
-    ReactPixel.track('ViewContent', {
+    window.fbq('track', 'ViewContent', {
       content_name: ctaName
     });
     if (import.meta.env.DEV) {
@@ -82,8 +119,12 @@ export const trackCTAClick = (ctaName: string): void => {
 
 // Evento de unirse a comunidad WhatsApp
 export const trackJoinWhatsApp = (): void => {
+  if (typeof window === 'undefined' || !isPixelInitialized || !window.fbq) {
+    return;
+  }
+
   try {
-    ReactPixel.track('Contact', {
+    window.fbq('track', 'Contact', {
       content_category: 'whatsapp',
       content_name: 'join_whatsapp_community'
     });
@@ -97,8 +138,12 @@ export const trackJoinWhatsApp = (): void => {
 
 // Evento de scroll a sección
 export const trackSectionView = (sectionName: string): void => {
+  if (typeof window === 'undefined' || !isPixelInitialized || !window.fbq) {
+    return;
+  }
+
   try {
-    ReactPixel.trackCustom('SectionView', {
+    window.fbq('trackCustom', 'SectionView', {
       section_name: sectionName
     });
     if (import.meta.env.DEV) {

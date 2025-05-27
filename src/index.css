@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,12 +50,29 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
   body {
-    @apply bg-void-dark text-future-white font-body antialiased;
+    @apply bg-void-dark text-future-white antialiased;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
   }
+  
+  #root {
+    min-height: 100vh;
+    width: 100%;
+  }
+  
   h1, h2, h3, h4, h5, h6 {
-    @apply font-hero;
+    font-family: "Satoshi", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 700;
   }
+  
   h1 {
     @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight;
   }
@@ -66,8 +82,30 @@
   h3 {
     @apply text-2xl sm:text-3xl font-bold;
   }
+  
   .bg-glass {
     @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl;
+  }
+  
+  /* Fallback colors para cuando las variables CSS no cargan */
+  .bg-void-dark {
+    background-color: hsl(240, 40%, 10%);
+    background-color: hsl(var(--void-dark, 240 40% 10%));
+  }
+  
+  .text-future-white {
+    color: hsl(210, 20%, 98%);
+    color: hsl(var(--future-white, 210 20% 98%));
+  }
+  
+  .text-electric-purple {
+    color: hsl(260, 100%, 63%);
+    color: hsl(var(--electric-purple, 260 100% 63%));
+  }
+  
+  .bg-electric-purple {
+    background-color: hsl(260, 100%, 63%);
+    background-color: hsl(var(--electric-purple, 260 100% 63%));
   }
 }
 
@@ -87,6 +125,21 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Loading spinner para debugging */
+.loading-spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: hsl(var(--electric-purple));
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .particles-container {
