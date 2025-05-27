@@ -1,7 +1,7 @@
 import ReactPixel from 'react-facebook-pixel';
 
 // ID del Pixel de Facebook
-const PIXEL_ID = '1512435079745917';
+const PIXEL_ID = '1272701517682286'; // Nuevo Pixel ID
 
 // Opciones de configuración
 const options = {
