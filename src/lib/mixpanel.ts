@@ -2,32 +2,56 @@ import mixpanel from 'mixpanel-browser';
 import type { MixpanelProperties } from './mixpanel-types';
 
 // Inicialización de Mixpanel
-// Reemplaza 'YOUR_MIXPANEL_TOKEN' con tu token real de Mixpanel
 const MIXPANEL_TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN || '';
 
-if (MIXPANEL_TOKEN) {
-  mixpanel.init(MIXPANEL_TOKEN, {
-    debug: import.meta.env.DEV,
-    track_pageview: true,
-    persistence: 'localStorage',
-    property_blacklist: ['$current_url', '$initial_referrer', '$referrer'],
-    cross_site_cookie: false,
-    secure_cookie: true,
-    ignore_dnt: false,
-  });
-  
-  // Log de inicialización
-  if (import.meta.env.DEV) {
-    console.log('🚀 Mixpanel initialized with token:', MIXPANEL_TOKEN.substring(0, 8) + '...');
+// Variable para controlar si Mixpanel está inicializado
+let isMixpanelInitialized = false;
+
+// Función para inicializar Mixpanel de forma segura
+const initMixpanel = () => {
+  if (typeof window === 'undefined' || isMixpanelInitialized) {
+    return;
   }
-} else {
-  console.warn('⚠️ Mixpanel token is not configured. Check your .env file');
+
+  if (!MIXPANEL_TOKEN) {
+    console.warn('⚠️ Mixpanel token is not configured. Analytics will be disabled.');
+    return;
+  }
+
+  try {
+    mixpanel.init(MIXPANEL_TOKEN, {
+      debug: import.meta.env.DEV,
+      track_pageview: false, // Desactivar pageview automático
+      persistence: 'localStorage',
+      property_blacklist: ['$current_url', '$initial_referrer', '$referrer'],
+      cross_site_cookie: false,
+      secure_cookie: true,
+      ignore_dnt: false,
+    });
+    
+    isMixpanelInitialized = true;
+    
+    // Log de inicialización solo en desarrollo
+    if (import.meta.env.DEV) {
+      console.log('🚀 Mixpanel initialized with token:', MIXPANEL_TOKEN.substring(0, 8) + '...');
+    }
+  } catch (error) {
+    console.error('Error initializing Mixpanel:', error);
+  }
+};
+
+// Inicializar cuando se carga el módulo (solo si estamos en el navegador)
+if (typeof window !== 'undefined') {
+  initMixpanel();
 }
 
 // Funciones auxiliares para trackear eventos
 export const trackEvent = (eventName: string, properties?: MixpanelProperties) => {
-  if (!MIXPANEL_TOKEN) {
-    console.warn('Mixpanel token is not set');
+  // Verificar si estamos en el navegador y si Mixpanel está disponible
+  if (typeof window === 'undefined' || !MIXPANEL_TOKEN || !isMixpanelInitialized) {
+    if (import.meta.env.DEV) {
+      console.log('📊 Mixpanel Event (disabled):', eventName, properties);
+    }
     return;
   }
 
@@ -40,7 +64,7 @@ export const trackEvent = (eventName: string, properties?: MixpanelProperties) =
     
     mixpanel.track(eventName, eventData);
     
-    // Log para debugging - remover en producción
+    // Log para debugging - solo en desarrollo
     if (import.meta.env.DEV) {
       console.log('📊 Mixpanel Event:', eventName, eventData);
     }
@@ -51,7 +75,9 @@ export const trackEvent = (eventName: string, properties?: MixpanelProperties) =
 
 // Función para identificar usuarios
 export const identifyUser = (userId: string, properties?: Record<string, any>) => {
-  if (!MIXPANEL_TOKEN) return;
+  if (typeof window === 'undefined' || !MIXPANEL_TOKEN || !isMixpanelInitialized) {
+    return;
+  }
 
   try {
     mixpanel.identify(userId);
@@ -70,7 +96,9 @@ export const identifyUser = (userId: string, properties?: Record<string, any>) =
 
 // Función para registrar propiedades del usuario
 export const setUserProperties = (properties: Record<string, any>) => {
-  if (!MIXPANEL_TOKEN) return;
+  if (typeof window === 'undefined' || !MIXPANEL_TOKEN || !isMixpanelInitialized) {
+    return;
+  }
 
   try {
     mixpanel.people.set(properties);
@@ -86,7 +114,9 @@ export const setUserProperties = (properties: Record<string, any>) => {
 
 // Función para reset del usuario
 export const resetUser = () => {
-  if (!MIXPANEL_TOKEN) return;
+  if (typeof window === 'undefined' || !MIXPANEL_TOKEN || !isMixpanelInitialized) {
+    return;
+  }
 
   try {
     mixpanel.reset();

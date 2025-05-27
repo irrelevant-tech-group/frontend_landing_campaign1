@@ -7,7 +7,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useSessionTracking } from "@/hooks/useSessionTracking";
 import { useEffect } from 'react';
-import { initFacebookPixel, trackPageView } from '@/lib/facebook-pixel';
 
 const queryClient = new QueryClient();
 
@@ -16,10 +15,27 @@ const AppContent = () => {
   // Hook para trackear sesiones automáticamente
   useSessionTracking();
   
-  // Inicializar y trackear vista de página con Facebook Pixel
+  // Inicializar Facebook Pixel de forma segura
   useEffect(() => {
-    initFacebookPixel(); // Inicializar el Pixel al montar la aplicación
-    trackPageView();
+    // Solo inicializar si estamos en el navegador
+    if (typeof window !== 'undefined') {
+      try {
+        // Inicializar Facebook Pixel de forma asíncrona
+        const initPixel = async () => {
+          try {
+            const { initFacebookPixel, trackPageView } = await import('@/lib/facebook-pixel');
+            initFacebookPixel();
+            trackPageView();
+          } catch (error) {
+            console.warn('Facebook Pixel initialization failed:', error);
+          }
+        };
+        
+        initPixel();
+      } catch (error) {
+        console.warn('Error during pixel initialization:', error);
+      }
+    }
   }, []);
   
   return (
