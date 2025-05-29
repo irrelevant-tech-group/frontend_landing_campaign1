@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
   Check,
-  Clock,
   MessageSquare,
   DollarSign,
   Users,
@@ -12,9 +11,6 @@ import {
   CreditCard,
   Headphones,
   Brain,
-  FileText,
-  ChevronRight,
-  TrendingUp,
   AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -69,52 +65,6 @@ const questions: Question[] = [
   },
   {
     id: 2,
-    text: "¿Qué tipo de tareas te quitan más tiempo hoy?",
-    description: "Identifica el mayor cuello de botella en tu día a día",
-    type: "multi-select",
-    required: true,
-    options: [
-      { id: "cotizar", text: "Cotizar", icon: FileText },
-      { id: "pagos", text: "Revisar pagos", icon: DollarSign },
-      { id: "clientes", text: "Responder clientes", icon: MessageSquare },
-      { id: "facturas", text: "Subir facturas", icon: CreditCard },
-      { id: "organizar", text: "Organizar información", icon: Settings },
-      { id: "otra", text: "Otra tarea", icon: Clock }
-    ]
-  },
-  {
-    id: 3,
-    text: "¿Qué herramientas usas actualmente en tu empresa?",
-    description: "Selecciona todas las que apliquen",
-    type: "multi-select",
-    required: true,
-    options: [
-      { id: "whatsapp", text: "WhatsApp", icon: MessageSquare },
-      { id: "excel", text: "Excel o Google Sheets", icon: FileText },
-      { id: "siigo", text: "Siigo", icon: DollarSign },
-      { id: "crm", text: "CRM", icon: Users },
-      { id: "drive", text: "Google Drive", icon: Brain },
-      { id: "shopify", text: "Shopify", icon: Settings },
-      { id: "otra", text: "Otra herramienta", icon: ChevronRight }
-    ]
-  },
-  {
-    id: 4,
-    text: "¿Cuál es el mayor desafío operativo en tu empresa?",
-    description: "Elige el problema que más afecta tu productividad",
-    type: "multi-select",
-    required: true,
-    options: [
-      { id: "tiempos", text: "Tiempos de respuesta lentos", icon: Clock },
-      { id: "costos", text: "Costos operativos crecientes", icon: DollarSign },
-      { id: "escalabilidad", text: "Dificultad para escalar", icon: TrendingUp },
-      { id: "manual", text: "Demasiado trabajo manual", icon: Settings },
-      { id: "informacion", text: "Información desorganizada", icon: Brain },
-      { id: "otro", text: "Otro desafío", icon: AlertCircle }
-    ]
-  },
-  {
-    id: 5,
     text: "¿Cuántas personas trabajan en tu empresa?",
     description: "Tamaño aproximado de tu equipo",
     type: "single-select",
@@ -127,7 +77,7 @@ const questions: Question[] = [
     ]
   },
   {
-    id: 6,
+    id: 3,
     text: "Tu información de contacto",
     description: "Para enviarte tu roadmap personalizado",
     type: "contact-form",
@@ -317,10 +267,7 @@ const FormSection = () => {
         contactInfo: formData.contactInfo,
         responses: {
           areasToImprove: Array.isArray(formData[1]) ? formData[1] : [],
-          timeConsumingTasks: Array.isArray(formData[2]) ? formData[2] : [],
-          currentTools: Array.isArray(formData[3]) ? formData[3] : [],
-          operationalChallenges: Array.isArray(formData[4]) ? formData[4] : [],
-          companySize: formData[5] as string
+          companySize: formData[2] as string
         }
       };
       console.log('Enviando datos al backend:', payload);
@@ -644,6 +591,7 @@ const FormSection = () => {
           </motion.div>
         </div>
       </div>
+      
     </section>
   );
 };
